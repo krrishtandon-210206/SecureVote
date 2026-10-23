@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SecureVote</title>
+<style>
+:root{
+  --paper:#f1f3f6; --card:#ffffff; --ink:#101a2c; --muted:#5b6679; --line:#d5dae3;
+  --blue:#2446e0; --blue-soft:#e6ebff; --red:#c4322a; --red-soft:#fbe9e7; --green:#1c7a4b; --green-soft:#e3f4ea;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --paper:#0e1522; --card:#161f31; --ink:#e8edf7; --muted:#97a3b8; --line:#2a3550;
+  --blue:#7d95ff; --blue-soft:#1d2848; --red:#ff7b72; --red-soft:#3a1d1f; --green:#5fd49a; --green-soft:#16332a;}}
+*{box-sizing:border-box}
+html{background:var(--paper)}
+body{margin:0;font:16px/1.55 var(--sans);color:var(--ink);background:var(--paper)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px 80px}
+header{padding:28px 0 8px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px}
+h1{font:600 2.2rem/1.1 var(--serif);margin:0;letter-spacing:-.01em}
+.election{color:var(--muted);flex:1;min-width:180px}
+.phase{font-size:.85rem;font-weight:600;padding:3px 12px;border-radius:99px;border:1.5px solid currentColor}
+.phase.open{color:var(--green)} .phase.closed,.phase.tallied{color:var(--blue)} .phase.setup{color:var(--muted)}
+nav{display:flex;gap:4px;border-bottom:1.5px solid var(--line);margin:14px 0 26px;overflow-x:auto}
+nav button{background:none;border:0;font:inherit;font-weight:600;color:var(--muted);padding:10px 16px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1.5px;white-space:nowrap}
+nav button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--blue)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.tab{display:none}.tab.on{display:block}
+h2{font:600 1.35rem/1.25 var(--serif);margin:0 0 6px}
+h3{font:600 1.05rem var(--serif);margin:0 0 8px}
+p{margin:0 0 12px}.muted{color:var(--muted)}.small{font-size:.88rem}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:26px;align-items:start}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1.5px solid var(--line);border-radius:6px;padding:22px;margin-bottom:18px}
+.panel.locked{opacity:.5;pointer-events:none}
+label{display:block;font-weight:600;font-size:.92rem;margin:12px 0 4px}
+input,select,textarea{width:100%;font:inherit;padding:9px 11px;border:1.5px solid var(--line);border-radius:4px;background:var(--paper);color:var(--ink)}
+textarea{font-family:var(--mono);font-size:.8rem}
+.row{display:flex;gap:12px;flex-wrap:wrap}.row>*{flex:1;min-width:130px}
+.btn{font:inherit;font-weight:600;border:0;border-radius:4px;padding:10px 18px;cursor:pointer;background:var(--blue);color:#fff;margin-top:14px}
+@media (prefers-color-scheme:dark){.btn{color:#0e1522}}
+.btn.ghost{background:none;color:var(--ink);border:1.5px solid var(--line)}
+.btn.danger{background:var(--red);color:#fff}
+.btn:disabled{opacity:.5;cursor:wait}
+.ballot{list-style:none;margin:10px 0 0;padding:0;border:1.5px solid var(--ink);border-radius:4px}
+.ballot li+li{border-top:1.5px solid var(--line)}
+.ballot label{display:flex;align-items:center;gap:14px;margin:0;padding:14px 16px;cursor:pointer;font-weight:600;font-size:1.05rem;font-family:var(--serif)}
+.ballot input{appearance:none;width:24px;height:24px;border:2px solid var(--ink);border-radius:3px;padding:0;flex:none;display:grid;place-content:center;background:transparent}
+.ballot input:checked{background:var(--blue);border-color:var(--blue)}
+.ballot input:checked::after{content:"";width:11px;height:6px;border:solid #fff;border-width:0 0 3px 3px;transform:rotate(-45deg) translate(1px,-1px)}
+.ballot label:has(input:checked){background:var(--blue-soft)}
+.msg{margin-top:12px;padding:10px 14px;border-radius:4px;font-size:.93rem;border-left:4px solid}
+.msg.ok{background:var(--green-soft);border-color:var(--green)}.msg.err{background:var(--red-soft);border-color:var(--red)}.msg.info{background:var(--blue-soft);border-color:var(--blue)}
+.trail{font:.8rem/1.5 var(--mono);background:var(--ink);color:#dfe6f5;border-radius:6px;padding:16px 18px;position:sticky;top:12px;min-height:150px}
+@media (prefers-color-scheme:dark){.trail{background:#0a0f19;border:1.5px solid var(--line)}}
+.trail h3{color:#fff;font-family:var(--serif)}
+.trail .ln{margin:0 0 9px;overflow-wrap:anywhere}.trail .ln b{color:#8fa6ff;font-weight:600}.trail .ln i{color:#8d9ab3;font-style:normal}
+.trail .hide{color:#7fe0ae}
+.chip{font:.8rem var(--mono);background:var(--paper);border:1px solid var(--line);padding:1px 7px;border-radius:3px;word-break:break-all}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:.85rem}
+td.mono,.mono{font-family:var(--mono);font-size:.8rem;word-break:break-all}
+.scroll{overflow-x:auto}
+.checks{list-style:none;padding:0;margin:14px 0 0}
+.checks li{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
+.tick{font-weight:700;width:1.3em;flex:none}.pass .tick{color:var(--green)}.fail .tick{color:var(--red)}
+.bar{display:grid;grid-template-columns:130px 1fr 46px;gap:12px;align-items:center;margin:12px 0}
+.bar .track{height:30px;background:var(--paper);border:1.5px solid var(--line);border-radius:3px;overflow:hidden}
+.bar .fill{height:100%;background:var(--blue);transition:width .7s ease}
+.bar .n{font:600 1.2rem var(--serif);text-align:right}
+.bar .name{font:600 1.05rem var(--serif)}
+.stats{display:flex;gap:26px;flex-wrap:wrap;margin:10px 0 4px}.stats div{min-width:90px}
+.stats b{display:block;font:600 1.7rem var(--serif)}
+.shares{display:grid;gap:10px}.share{border:1.5px solid var(--line);border-radius:4px;padding:10px 12px}
+.share .mono{max-height:3.2em;overflow:hidden}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>SecureVote</h1>
+    <span class="election" id="title">Anonymous, verifiable elections</span>
+    <span class="phase setup" id="phase">no election</span>
+  </header>
+  <nav role="tablist">
+    <button role="tab" data-tab="vote" aria-selected="true">Vote</button>
+    <button role="tab" data-tab="ledger" aria-selected="false">Ledger and audit</button>
+    <button role="tab" data-tab="results" aria-selected="false">Results</button>
+    <button role="tab" data-tab="admin" aria-selected="false">Administration</button>
+  </nav>
+
+  <!-- VOTE -->
+  <section class="tab on" id="tab-vote">
+    <div id="vote-closed" class="panel" hidden></div>
+    <div class="grid" id="vote-grid">
+      <div>
+        <div class="panel" id="p1">
+          <h2>1. Get your anonymous token</h2>
+          <p class="muted">Enter the ID and access code you were given. Your browser hides a secret serial number inside a blinded request; the registration authority signs it without ever seeing it.</p>
+          <div class="row">
+            <div><label for="vid">Voter ID</label><input id="vid" autocomplete="off" placeholder="Your voter ID"></div>
+            <div><label for="vcode">Access code</label><input id="vcode" autocomplete="off" placeholder="Your access code"></div>
+          </div>
+          <button class="btn" id="btn-token">Get token</button>
+          <div id="m1"></div>
+        </div>
+        <div class="panel locked" id="p2">
+          <h2>2. Mark and cast your ballot</h2>
+          <p class="muted">Your choice is encrypted in this browser and sent with proofs that it is a valid vote. This step uses no ID: the server cannot tell who is voting.</p>
+          <ul class="ballot" id="cands"></ul>
+          <button class="btn" id="btn-cast">Cast encrypted ballot</button>
+          <div id="m2"></div>
+        </div>
+        <div class="panel" id="p3" hidden>
+          <h2>Ballot recorded</h2>
+          <p>Your ballot is on the public ledger. Keep this receipt to find it later.</p>
+          <p class="small">Ledger position <span class="chip" id="r-idx"></span></p>
+          <p class="small">Entry hash <span class="chip" id="r-hash"></span></p>
+        </div>
+      </div>
+      <aside class="trail" id="trail" aria-live="polite">
+        <h3>What your browser just did</h3>
+        <div class="ln" style="color:#8d9ab3">Nothing yet. Each cryptographic step appears here as it runs.</div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- LEDGER -->
+  <section class="tab" id="tab-ledger">
+    <div class="panel">
+      <h2>Public audit</h2>
+      <p class="muted">Anyone can run this. It re-checks every signature, proof and hash on the ledger using public data only.</p>
+      <div class="row" style="flex-wrap:nowrap"><button class="btn" id="btn-audit" style="flex:none">Run public audit</button><button class="btn ghost" id="btn-ledger" style="flex:none">Reload ledger</button></div>
+      <ul class="checks" id="checks"></ul>
+    </div>
+    <div class="panel">
+      <h2>Ballot ledger</h2>
+      <p class="muted small">Each entry links to the one before it by hash, so editing history breaks every later entry. Ciphertexts reveal nothing about the vote.</p>
+      <div class="scroll"><table><thead><tr><th>#</th><th>Nullifier</th><th>Encrypted ballot (first ciphertext)</th><th>Entry hash</th></tr></thead><tbody id="ledger-rows"><tr><td colspan="4" class="muted">No ballots yet.</td></tr></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="tab" id="tab-results">
+    <div class="panel">
+      <h2>Results</h2>
+      <div class="stats" id="stats"></div>
+      <div id="bars"></div>
+      <div id="res-note" class="muted"></div>
+      <button class="btn" id="btn-verify" hidden>Verify the tally in my browser</button>
+      <div id="m-verify"></div>
+    </div>
+  </section>
+
+  <!-- ADMIN -->
+  <section class="tab" id="tab-admin">
+    <div class="panel">
+      <h2>Administrator</h2>
+      <label for="apw">Admin password</label>
+      <input id="apw" type="password" placeholder="Admin password" autocomplete="off">
+    </div>
+    <div class="panel" id="a-setup">
+      <h2>Create election</h2>
+      <label for="s-title">Title</label><input id="s-title" value="Student Council Election">
+      <label for="s-cands">Candidates (one per line)</label><textarea id="s-cands" rows="3" style="font-family:var(--sans);font-size:1rem">Alice
+Bob
+Carol</textarea>
+      <div class="row">
+        <div><label for="s-voters">Number of voters</label><input id="s-voters" type="number" min="1" max="1000" value="10"></div>
+        <div><label for="s-auth">Authorities</label><input id="s-auth" type="number" min="2" max="9" value="5"></div>
+        <div><label for="s-thr">Needed to decrypt</label><input id="s-thr" type="number" min="2" max="9" value="3"></div>
+        <div><label for="s-bits">Key size</label><select id="s-bits"><option value="512">512 (fast)</option><option value="768">768</option><option value="1024" selected>1024</option></select></div>
+      </div>
+      <button class="btn" id="btn-setup">Create election</button>
+      <div id="m-setup"></div>
+    </div>
+    <div class="panel" id="a-codes" hidden>
+      <h2>Voter access codes</h2>
+      <p class="muted small">Hand one code to each voter. A code lets a voter request exactly one token.</p>
+      <div class="scroll"><table><thead><tr><th>Voter ID</th><th>Access code</th></tr></thead><tbody id="code-rows"></tbody></table></div>
+    </div>
+    <div class="panel" id="a-flow" hidden>
+      <h2>Election controls</h2>
+      <button class="btn" id="btn-close">Close voting</button>
+      <button class="btn ghost" id="btn-tally">Decrypt tally</button>
+      <div id="m-flow"></div>
+      <h3 style="margin-top:22px">Authority key shares</h3>
+      <p class="muted small" id="share-help">The decryption key is split between the authorities. The server keeps no copy: it can only decrypt when enough authorities submit their shares after voting closes.</p>
+      <div class="shares" id="shares"></div>
+      <label for="man-auth">Submit a share manually</label>
+      <div class="row"><input id="man-auth" type="number" placeholder="Authority number" style="max-width:170px"><input id="man-share" placeholder="Share"></div>
+      <button class="btn ghost" id="btn-manual">Submit share</button>
+    </div>
+    <div class="panel" id="a-reset" hidden>
+      <h3>Start over</h3>
+      <p class="muted small">Deletes this election, its ledger and all keys.</p>
+      <button class="btn danger" id="btn-reset" style="margin-top:0">Delete election</button>
+    </div>
+  </section>
+</div>
+<script src="voter.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+let ST = {};
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const short = (s, n = 14) => s.length > n * 2 ? s.slice(0, n) + "…" + s.slice(-6) : s;
+const adminHdr = () => ({ "x-admin": $("apw").value || sessionStorage.getItem("sv-admin") || "" });
+async function api(path, body, admin) {
+  const opt = body === undefined ? { headers: admin ? adminHdr() : {} } : { method: "POST", headers: { "content-type": "application/json", ...(admin ? adminHdr() : {}) }, body: JSON.stringify(body) };
+  const r = await fetch(path, opt); let j = {}; try { j = await r.json(); } catch {}
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+function say(id, text, kind = "info") { $(id).innerHTML = text ? `<div class="msg ${kind}" role="status">${esc(text)}</div>` : ""; }
+async function busy(btn, fn) { btn.disabled = true; try { await fn(); } finally { btn.disabled = false; } }
+
+// ---- tabs ----
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x === b));
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.id === "tab-" + b.dataset.tab));
+  if (b.dataset.tab === "ledger") loadLedger();
+  if (b.dataset.tab === "admin") loadAdmin();
+});
+$("apw").value = sessionStorage.getItem("sv-admin") || "";
+$("apw").oninput = () => sessionStorage.setItem("sv-admin", $("apw").value);
+
+// ---- state ----
+const tokKey = () => "sv:" + String(ST.rsa_n || "").slice(0, 24);
+const getTok = () => { try { return JSON.parse(localStorage.getItem(tokKey()) || "null"); } catch { return null; } };
+const setTok = t => localStorage.setItem(tokKey(), JSON.stringify(t));
+let lastPhase, lastN;
+async function refresh() {
+  try { ST = await api("/api/state"); } catch { return; }
+  const ph = ST.phase;
+  $("phase").textContent = { setup: "no election", open: "voting open", closed: "voting closed", tallied: "result published" }[ph];
+  $("phase").className = "phase " + ph;
+  $("title").textContent = ST.title || "Anonymous, verifiable elections";
+  renderVote(); renderResults();
+  if (lastPhase !== ph || lastN !== ST.paillier_n) { loadAdmin(); lastPhase = ph; lastN = ST.paillier_n; }
+}
+setInterval(refresh, 4000);
+
+// ---- voting ----
+function renderVote() {
+  const open = ST.phase === "open", t = getTok();
+  $("vote-grid").hidden = !open;
+  const vc = $("vote-closed");
+  vc.hidden = open;
+  vc.innerHTML = ST.phase === "setup" ? "<h2>No election yet</h2><p class='muted'>An administrator needs to create one in the Administration tab.</p>" :
+    "<h2>Voting is closed</h2><p class='muted'>See the Results and Ledger tabs.</p>";
+  if (!open) return;
+  if (!$("cands").dataset.n || $("cands").dataset.n !== ST.paillier_n) {
+    $("cands").dataset.n = ST.paillier_n;
+    $("cands").innerHTML = ST.candidates.map((c, i) => `<li><label><input type="radio" name="cand" value="${i}">${esc(c)}</label></li>`).join("");
+  }
+  $("p2").classList.toggle("locked", !t || t.voted);
+  $("p1").classList.toggle("locked", !!t);
+  if (t && !t.voted && !$("m1").innerHTML) say("m1", "Token ready in this browser. Continue to step 2.", "ok");
+  if (t && t.voted) { $("p3").hidden = false; $("r-idx").textContent = "#" + t.receipt.index; $("r-hash").textContent = short(t.receipt.hash, 18); }
+  else $("p3").hidden = true;
+}
+const trail = (() => { let first = true; return {
+  clear() { $("trail").innerHTML = "<h3>What your browser just did</h3>"; first = false; },
+  add(html) { if (first) this.clear(); $("trail").insertAdjacentHTML("beforeend", `<div class="ln">${html}</div>`); },
+  reset() { first = true; } }; })();
+const ms = t0 => `<i>${Math.round(performance.now() - t0)} ms</i>`;
+
+$("btn-token").onclick = e => busy(e.target, async () => {
+  const id = $("vid").value.trim(), code = $("vcode").value.trim();
+  if (!id || !code) return say("m1", "Enter your voter ID and access code.", "err");
+  try {
+    trail.reset(); const rsaN = BigInt(ST.rsa_n), rsaE = BigInt(ST.rsa_e);
+    let t0 = performance.now(); const tk = await SV.newToken(rsaN, rsaE);
+    trail.add(`<b>Secret serial</b> generated, never leaves this browser<br><i>${short(tk.serial.toString(), 10)}</i>`);
+    trail.add(`<b>Blinded</b> it with a random factor ${ms(t0)}<br><i>${short(tk.blinded.toString(), 18)}</i><br>The authority sees this, which looks like random noise.`);
+    const res = await api("/api/register", { voter_id: id, code, blinded: tk.blinded.toString() });
+    t0 = performance.now(); const sig = SV.unblind(BigInt(res.blind_sig), tk.r, rsaN);
+    trail.add(`<b>Authority signed</b> without seeing the serial. <b>Unblinded</b> the signature ${ms(t0)}<br><span class="hide">Now you hold a valid signature on a serial the authority has never seen.</span>`);
+    setTok({ serial: tk.serial.toString(), sig: sig.toString(), voted: false });
+    $("vid").value = $("vcode").value = ""; say("m1", "Token issued and stored in this browser. Continue to step 2.", "ok"); renderVote();
+  } catch (err) { say("m1", err.message, "err"); }
+});
+
+$("btn-cast").onclick = e => busy(e.target, async () => {
+  const sel = document.querySelector("input[name=cand]:checked"), t = getTok();
+  if (!sel) return say("m2", "Pick one candidate.", "err");
+  try {
+    say("m2", "Encrypting and proving… this takes a few seconds.", "info"); trail.reset();
+    const n = BigInt(ST.paillier_n), choice = +sel.value; let t0 = performance.now();
+    const ballot = await SV.makeBallot(n, ST.candidates.length, choice, BigInt(t.serial), BigInt(t.sig), step => {
+      if (step === "encrypted") trail.add(`<b>Encrypted</b> one ciphertext per candidate (1 for your pick, 0 for the rest) ${ms(t0)}`);
+      if (step === "bit-proofs") trail.add(`<b>Proved</b> each ciphertext holds 0 or 1 without saying which ${ms(t0)}`);
+      if (step === "sum-proof") trail.add(`<b>Proved</b> the ballot holds exactly one vote ${ms(t0)}`);
+    });
+    trail.add(`<b>Sending</b> ciphertexts, proofs and your serial as the nullifier. <span class="hide">No name, no plaintext choice.</span>`);
+    const res = await api("/api/vote", { ballot });
+    trail.add(`<b>Accepted.</b> Server verified every proof and signature, then chained your ballot onto the ledger.`);
+    setTok({ ...t, voted: true, receipt: res }); say("m2", "", ""); renderVote(); refresh();
+  } catch (err) { say("m2", err.message, "err"); trail.add(`<b style="color:#ff9d96">Rejected:</b> ${esc(err.message)}`); }
+});
+
+// ---- ledger / audit ----
+async function loadLedger() {
+  try {
+    const l = await api("/api/ledger"), tb = $("ledger-rows");
+    tb.innerHTML = l.entries.length ? l.entries.map((e, i) => `<tr><td>${i}</td><td class="mono">${esc(short(e.record.nullifier, 8))}</td><td class="mono">${esc(short(e.record.cts[0], 16))}</td><td class="mono">${esc(short(e.hash, 10))}</td></tr>`).join("") : '<tr><td colspan="4" class="muted">No ballots yet.</td></tr>';
+    return l;
+  } catch (err) { $("ledger-rows").innerHTML = `<tr><td colspan="4" class="muted">${esc(err.message)}</td></tr>`; }
+}
+$("btn-ledger").onclick = loadLedger;
+$("btn-audit").onclick = e => busy(e.target, async () => {
+  try {
+    const a = await api("/api/audit");
+    $("checks").innerHTML = a.checks.map(c => `<li class="${c.ok ? "pass" : "fail"}"><span class="tick">${c.ok ? "✓" : "✗"}</span><span>${esc(c.name)}${c.detail ? ` <span class="muted small">(${esc(c.detail)})</span>` : ""}</span></li>`).join("")
+      + `<li class="${a.ok ? "pass" : "fail"}"><span class="tick">${a.ok ? "✓" : "✗"}</span><b>${a.ok ? "Election verified" : "Audit failed"}</b></li>`;
+  } catch (err) { $("checks").innerHTML = `<li class="fail"><span class="tick">✗</span>${esc(err.message)}</li>`; }
+});
+
+// ---- results ----
+function renderResults() {
+  const s = ST;
+  $("stats").innerHTML = s.phase === "setup" ? "" :
+    `<div><b>${s.tokens_issued}/${s.eligible}</b><span class="muted small">tokens issued</span></div><div><b>${s.ballots}</b><span class="muted small">ballots on ledger</span></div><div><b>${s.rejected}</b><span class="muted small">ballots rejected</span></div>`;
+  const r = s.results;
+  $("btn-verify").hidden = !r;
+  if (!r) {
+    $("bars").innerHTML = "";
+    $("res-note").textContent = s.phase === "setup" ? "No election yet." : s.phase === "open" ? "Counts stay encrypted until voting closes and enough authorities cooperate." : `Voting closed. Waiting for ${s.threshold} authorities to submit key shares (${s.shares_submitted} so far).`;
+    return;
+  }
+  const max = Math.max(1, ...r.map(x => +x.votes)), total = r.reduce((a, x) => a + +x.votes, 0);
+  $("bars").innerHTML = r.map(x => `<div class="bar"><span class="name">${esc(x.candidate)}</span><div class="track"><div class="fill" style="width:${100 * x.votes / max}%"></div></div><span class="n">${x.votes}</span></div>`).join("");
+  $("res-note").textContent = `${total} votes counted. Only these totals were ever decrypted. No individual ballot was.`;
+}
+$("btn-verify").onclick = e => busy(e.target, async () => {
+  try {
+    const l = await api("/api/ledger"), v = SV.verifyTally(BigInt(ST.paillier_n), l.entries, ST.results);
+    const good = v.every(x => x.ok);
+    say("m-verify", good ? `Verified here in your browser: for every candidate, the published total re-encrypts to exactly the product of the ${l.entries.length} ledger ballots.` : "Mismatch: the published tally does not match the ledger.", good ? "ok" : "err");
+  } catch (err) { say("m-verify", err.message, "err"); }
+});
+
+// ---- admin ----
+async function loadAdmin() {
+  const ph = ST.phase;
+  $("a-setup").hidden = ph !== "setup"; $("a-codes").hidden = ph === "setup"; $("a-flow").hidden = ph === "setup";
+  $("a-reset").hidden = ph === "setup";
+  $("btn-close").hidden = ph !== "open"; $("btn-tally").hidden = ph !== "closed";
+  if (ph === "setup") return;
+  try {
+    const c = await api("/api/admin/codes", undefined, true);
+    $("code-rows").innerHTML = Object.entries(c.codes).map(([k, v]) => `<tr><td class="mono">${esc(k)}</td><td class="mono">${esc(v)}</td></tr>`).join("");
+  } catch (err) { $("code-rows").innerHTML = `<tr><td colspan="2" class="muted">${esc(err.message)}. Enter the admin password above.</td></tr>`; }
+  const shares = JSON.parse(sessionStorage.getItem("sv-shares") || "[]");
+  $("shares").innerHTML = shares.length ? shares.map(s => `<div class="share"><b>Authority ${s.authority}</b><div class="mono muted">${esc(s.share)}</div>${ph === "closed" ? `<button class="btn ghost" data-a="${s.authority}" style="margin-top:8px">Submit as authority ${s.authority}</button>` : ""}</div>`).join("")
+    : '<p class="muted small">Shares are shown once when the election is created. They are not stored on the server.</p>';
+  $("shares").querySelectorAll("button[data-a]").forEach(b => b.onclick = () => submitShare(+b.dataset.a, shares.find(x => String(x.authority) === b.dataset.a).share));
+}
+async function submitShare(a, share) {
+  try { const r = await api("/api/authority/share", { authority: a, share }); say("m-flow", `Authority ${a} submitted. ${r.submitted} of ${r.threshold} needed.`, "ok"); refresh(); }
+  catch (err) { say("m-flow", err.message, "err"); }
+}
+$("btn-manual").onclick = () => submitShare(+$("man-auth").value, $("man-share").value.trim());
+$("btn-setup").onclick = e => busy(e.target, async () => {
+  say("m-setup", "Generating keys… this can take a few seconds.", "info");
+  try {
+    const r = await api("/api/admin/setup", { title: $("s-title").value, candidates: $("s-cands").value.split("\n"), voters: +$("s-voters").value, n_auth: +$("s-auth").value, threshold: +$("s-thr").value, bits: +$("s-bits").value }, true);
+    sessionStorage.setItem("sv-shares", JSON.stringify(r.shares)); say("m-setup", ""); await refresh(); loadAdmin();
+  } catch (err) { say("m-setup", err.message, "err"); }
+});
+$("btn-close").onclick = async () => { try { await api("/api/admin/close", {}, true); say("m-flow", "Voting closed.", "ok"); refresh(); } catch (err) { say("m-flow", err.message, "err"); } };
+$("btn-tally").onclick = async () => { try { await api("/api/admin/tally", {}, true); say("m-flow", "Tally decrypted and published. See Results.", "ok"); refresh(); } catch (err) { say("m-flow", err.message, "err"); } };
+$("btn-reset").onclick = async () => { if (!confirm("Delete this election permanently?")) return; try { await api("/api/admin/reset", {}, true); sessionStorage.removeItem("sv-shares"); say("m-flow", ""); refresh(); } catch (err) { say("m-flow", err.message, "err"); } };
+refresh();
+</script>
+</body>
+</html>

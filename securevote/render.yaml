@@ -1,0 +1,15 @@
+# Render.com blueprint: New > Blueprint > select your repo. HTTPS and a random admin password are automatic.
+services:
+  - type: web
+    name: securevote
+    runtime: docker
+    plan: starter
+    envVars:
+      - key: ADMIN_PASSWORD
+        generateValue: true
+      - key: SV_STATE
+        value: /data/state.pkl
+    disk:
+      name: securevote-data
+      mountPath: /data
+      sizeGB: 1

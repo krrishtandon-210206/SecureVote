@@ -1,0 +1,4 @@
+# For the non-Docker (systemd) install. Caddy reads DOMAIN from /etc/caddy/caddy.env (created by deploy-vps.sh)
+{$DOMAIN} {
+    reverse_proxy localhost:8000
+}

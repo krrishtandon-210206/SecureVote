@@ -1,0 +1,15 @@
+# /etc/systemd/system/securevote.service
+[Unit]
+Description=SecureVote
+After=network.target
+[Service]
+WorkingDirectory=/opt/securevote
+Environment=ADMIN_PASSWORD=change-me
+Environment=SV_STATE=/var/lib/securevote/state.pkl
+Environment=PORT=8000
+ExecStart=/usr/bin/python3 server.py
+StateDirectory=securevote
+Restart=always
+User=www-data
+[Install]
+WantedBy=multi-user.target

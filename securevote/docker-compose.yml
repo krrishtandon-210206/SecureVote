@@ -1,0 +1,24 @@
+# Reads DOMAIN and ADMIN_PASSWORD from the .env file created by ./setup.sh
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      SV_STATE: /data/state.pkl
+    volumes: ["sv-data:/data"]
+    expose: ["8000"]
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    env_file: .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [app]
+volumes:
+  sv-data:
+  caddy-data:
+  caddy-config:
