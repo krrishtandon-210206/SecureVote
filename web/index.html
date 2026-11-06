@@ -78,6 +78,16 @@ td.mono,.mono{font-family:var(--mono);font-size:.8rem;word-break:break-all}
 .shares{display:grid;gap:10px}.share{border:1.5px solid var(--line);border-radius:4px;padding:10px 12px}
 .share .mono{max-height:3.2em;overflow:hidden}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.team{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:12px}
+.member{border:1.5px solid var(--line);border-radius:6px;padding:14px 16px;background:var(--paper)}
+.member b{display:block;font:600 1.1rem var(--serif);margin-bottom:4px}
+.member span{display:block;font-size:.88rem;color:var(--muted)}
+.steps{counter-reset:s;list-style:none;padding:0;margin:12px 0 0}
+.steps li{counter-increment:s;position:relative;padding:0 0 14px 44px}
+.steps li::before{content:counter(s);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;background:var(--blue-soft);color:var(--blue);font-weight:700;display:grid;place-content:center}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.tags span{font:.82rem var(--mono);background:var(--blue-soft);color:var(--blue);padding:3px 10px;border-radius:99px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
 </style>
 </head>
 <body>
