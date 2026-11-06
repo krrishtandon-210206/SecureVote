@@ -92,6 +92,7 @@ td.mono,.mono{font-family:var(--mono);font-size:.8rem;word-break:break-all}
     <button role="tab" data-tab="ledger" aria-selected="false">Ledger and audit</button>
     <button role="tab" data-tab="results" aria-selected="false">Results</button>
     <button role="tab" data-tab="admin" aria-selected="false">Administration</button>
+    <button role="tab" data-tab="about" aria-selected="false">About</button>
   </nav>
 
   <!-- VOTE -->
@@ -202,6 +203,61 @@ Carol</textarea>
       <button class="btn danger" id="btn-reset" style="margin-top:0">Delete election</button>
     </div>
   </section>
+
+<!-- ABOUT -->
+<section class="tab" id="tab-about">
+  <div class="panel">
+    <h2>SecureVote: An Anonymous and Publicly Verifiable Electronic Voting System</h2>
+    <p class="muted">Using homomorphic encryption and zero-knowledge proofs</p>
+    <p>Electronic voting creates a tension. An authority that can check who is eligible can often also link a voter to their ballot, while systems that guarantee anonymity are hard for the public to verify. SecureVote gives voter privacy, ballot integrity and public auditability together, without trusting any single party.</p>
+  </div>
+
+  <div class="panel">
+    <h3>The problem</h3>
+    <p>Conventional systems usually have to choose between privacy and verifiability. Centralised systems that protect anonymity ask voters to trust one authority not to manipulate results, and fully transparent systems risk exposing how individuals voted. SecureVote lets any observer verify that an election was correct and detect ineligible or duplicate votes, while no party, including the election authority, can learn how a specific person voted.</p>
+  </div>
+
+  <div class="panel">
+    <h3>How it works</h3>
+    <ol class="steps">
+      <li><b>Anonymous eligibility (RSA blind signatures).</b> After checking your voter ID and access code, the registration authority signs a blinded request. Your browser removes the blinding, leaving a valid signature on a secret serial number the authority has never seen. This separates who you are from how you vote.</li>
+      <li><b>Encrypted ballot (Paillier encryption).</b> Your browser encrypts one ciphertext per candidate, with 1 for your choice and 0 for the others. Paillier is additively homomorphic, so ballots can be added together while still encrypted.</li>
+      <li><b>Proof of a valid vote (zero-knowledge proofs).</b> Schnorr-style, Fiat-Shamir proofs show that every ciphertext holds 0 or 1 and that the ballot contains exactly one vote. The server verifies them without learning your choice, so invalid or oversized votes cannot be submitted.</li>
+      <li><b>One person, one vote (nullifiers).</b> Your secret serial is the nullifier. The server rejects any ballot whose nullifier has already been used, which stops double voting without revealing who voted.</li>
+      <li><b>Tamper-evident ledger (hash chain).</b> Every accepted ballot, nullifier and proof is appended to a public ledger, and each entry includes the hash of the one before it. Altering history breaks every later entry.</li>
+      <li><b>Threshold decryption (Shamir secret sharing).</b> The decryption key is split among several election authorities. Only a threshold of them together can decrypt, and only the combined total is ever decrypted, never an individual ballot.</li>
+      <li><b>Public verification.</b> Anyone can run the audit to re-check every signature, proof and hash. In the Results tab, you can also confirm in your browser that the published totals match the product of all ledger ballots.</li>
+    </ol>
+  </div>
+
+  <div class="panel">
+    <h3>Security properties</h3>
+    <div class="cols">
+      <div><b>Anonymity</b><p class="muted small">Blind signatures and nullifiers keep identity and ballot unlinked. Casting a vote uses no ID.</p></div>
+      <div><b>Eligibility</b><p class="muted small">Only voters with a valid authority signature on their token can vote, and each access code yields one token.</p></div>
+      <div><b>Integrity</b><p class="muted small">Zero-knowledge proofs and the hash-chained ledger make invalid ballots and after-the-fact edits detectable.</p></div>
+      <div><b>Verifiability</b><p class="muted small">Auditing uses public data only, so voters and observers need not trust the server.</p></div>
+    </div>
+    <h3 style="margin-top:18px">Known limitations</h3>
+    <p class="muted small">Coercion resistance is not provided: a voter who is pressured or watched while voting is not protected. The cryptography (RSA and Paillier) is not quantum-resistant. Network-level metadata such as IP addresses is outside the scope of the protocol. This is a research and educational prototype, not a certified election system.</p>
+  </div>
+
+  <div class="panel">
+    <h3>Technologies</h3>
+    <div class="tags">
+      <span>Python</span><span>FastAPI</span><span>RSA blind signatures</span><span>Paillier cryptosystem</span><span>Schnorr / Fiat-Shamir ZKPs</span><span>Shamir secret sharing</span><span>Hash-chained ledger</span><span>In-browser cryptography (JavaScript)</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Project team</h3>
+    <div class="team">
+      <div class="member"><b>Krrish Tandon</b><span>Reg. no. 240953666</span><span>Roll no. 55 · CCE-C2</span></div>
+      <div class="member"><b>Sai Harshith Reddy</b><span>Reg. no. 240953498</span><span>Roll no. 46 · CCE-C2</span></div>
+      <div class="member"><b>Zaid Akhtar</b><span>Reg. no. 240953580</span><span>Roll no. 58 · CCE-C2</span></div>
+    </div>
+  </div>
+</section>
 </div>
 <script src="voter.js"></script>
 <script>
